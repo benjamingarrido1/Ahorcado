@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Juego del Ahorcado</title>
+  <style>
+    body { font-family: monospace; text-align: center; margin-top: 50px; }
+    .letra { font-size: 24px; margin: 5px; }
+    .palabra { letter-spacing: 10px; font-size: 32px; }
+    .incorrectas { color: red; }
+  </style>
+</head>
+<body>
+
+  <h1>🎯 Juego del Ahorcado</h1>
+  <div class="palabra" id="palabra"></div>
+  <p>Letras incorrectas: <span class="incorrectas" id="incorrectas"></span></p>
+  <input id="entrada" maxlength="1" autofocus />
+  <button onclick="reiniciar()">🔄 Reiniciar</button>
+
+  <script>
+    const URL_CSV = 'TU_LINK_CSV_ACÁ'; // <-- Pega el link CSV acá
+
+    let palabraOculta = '';
+    let letrasAdivinadas = [];
+    let letrasIncorrectas = [];
+
+    async function obtenerPalabra() {
+      const res = await fetch(URL_CSV);
+      const texto = await res.text();
+      const lineas = texto.split('\n');
+      const palabras = lineas.map(l => l.trim()).filter(Boolean);
+      const aleatoria = palabras[Math.floor(Math.random() * palabras.length)];
+      return aleatoria.toUpperCase();
+    }
+
+    async function iniciarJuego() {
+      palabraOculta = await obtenerPalabra();
+      letrasAdivinadas = [];
+      letrasIncorrectas = [];
+      actualizarPantalla();
+    }
+
+    function actualizarPantalla() {
+      const mostrada = [...palabraOculta].map(letra =>
+        letrasAdivinadas.includes(letra) ? letra : '_'
+      ).join(' ');
+
+      document.getElementById('palabra').textContent = mostrada;
+      document.getElementById('incorrectas').textContent = letrasIncorrectas.join(' ');
+    }
+
+    function manejarEntrada(letra) {
+      letra = letra.toUpperCase();
+      if (!letra.match(/[A-ZÑ]/) || letrasAdivinadas.includes(letra) || letrasIncorrectas.includes(letra)) return;
+
+      if (palabraOculta.includes(letra)) {
+        letrasAdivinadas.push(letra);
+      } else {
+        letrasIncorrectas.push(letra);
+      }
+
+      actualizarPantalla();
+      verificarFin();
+    }
+
+    function verificarFin() {
+      const palabraMostrada = [...palabraOculta].every(l => letrasAdivinadas.includes(l));
+      if (palabraMostrada) {
+        alert('🎉 ¡Ganaste!');
+        iniciarJuego();
+      } else if (letrasIncorrectas.length >= 6) {
+        alert(`💀 Perdiste. La palabra era: ${palabraOculta}`);
+        iniciarJuego();
+      }
+    }
+
+    document.getElementById('entrada').addEventListener('input', (e) => {
+      manejarEntrada(e.target.value);
+      e.target.value = '';
+    });
+
+    function reiniciar() {
+      iniciarJuego();
+    }
+
+    iniciarJuego();
+  </script>
+
+</body>
+</html>
